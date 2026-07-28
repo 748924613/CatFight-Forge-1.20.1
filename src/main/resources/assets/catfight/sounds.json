@@ -1,0 +1,17 @@
+{
+  "laowu_1": {
+    "sounds": [
+      { "name": "catfight:laowu_1", "stream": true }
+    ]
+  },
+  "laowu_2": {
+    "sounds": [
+      { "name": "catfight:laowu_2", "stream": true }
+    ]
+  },
+  "laowu_3": {
+    "sounds": [
+      { "name": "catfight:laowu_3", "stream": true }
+    ]
+  }
+}
