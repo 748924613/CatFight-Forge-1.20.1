@@ -72,11 +72,7 @@ public final class CatFightTracker {
 
         long gameTime = level.getGameTime();
         for (Cat cat : cats) {
-            if (!cat.isAlive()) {
-                removeFromFight(cat);
-                continue;
-            }
-            if (FORBIDDEN.containsKey(cat.getUUID())) {
+            if (!canFight(cat)) {
                 removeFromFight(cat);
                 continue;
             }
@@ -88,8 +84,7 @@ public final class CatFightTracker {
             }
 
             Cat target = data.target;
-            if (!target.isAlive() || target.isRemoved() || cat.distanceToSqr(target) > FIGHT_RANGE * FIGHT_RANGE
-                    || FORBIDDEN.containsKey(target.getUUID())) {
+            if (!canFight(target) || cat.distanceToSqr(target) > FIGHT_RANGE * FIGHT_RANGE) {
                 removeFromFight(cat);
                 continue;
             }
@@ -134,14 +129,14 @@ public final class CatFightTracker {
     }
 
     private static void findOpponent(ServerLevel level, Cat cat) {
-        if (FIGHTS.containsKey(cat.getUUID())) {
+        if (!canFight(cat) || FIGHTS.containsKey(cat.getUUID())) {
             return;
         }
         List<Cat> nearby = level.getEntitiesOfClass(Cat.class,
                 new AABB(cat.blockPosition()).inflate(FIGHT_RANGE),
                 other -> other != cat
+                        && canFight(other)
                         && !FIGHTS.containsKey(other.getUUID())
-                        && !FORBIDDEN.containsKey(other.getUUID())
                         && cat.distanceToSqr(other) <= FIGHT_RANGE * FIGHT_RANGE);
         if (!nearby.isEmpty()) {
             Cat opponent = nearby.get(0);
@@ -189,16 +184,21 @@ public final class CatFightTracker {
         }
     }
 
+    /** Tamed cats are safe from the confrontation behavior; only wild cats may fight. */
+    private static boolean canFight(Cat cat) {
+        return cat.isAlive()
+                && !cat.isRemoved()
+                && !cat.isTame()
+                && !FORBIDDEN.containsKey(cat.getUUID());
+    }
+
     /** Used by the sound event hook to suppress vanilla cat sounds only while fighting. */
     public static boolean isFighting(Cat cat) {
         FightData data = FIGHTS.get(cat.getUUID());
         return data != null
                 && data.fighter == cat
-                && !cat.isRemoved()
-                && data.target.isAlive()
-                && !data.target.isRemoved()
-                && !FORBIDDEN.containsKey(cat.getUUID())
-                && !FORBIDDEN.containsKey(data.target.getUUID())
+                && canFight(cat)
+                && canFight(data.target)
                 && cat.distanceToSqr(data.target) <= FIGHT_RANGE * FIGHT_RANGE;
     }
 

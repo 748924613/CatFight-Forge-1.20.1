@@ -12,8 +12,8 @@ import java.util.UUID;
  * <p>The server keeps a fight active only while both cats remain within five
  * blocks, so the visual state uses the same exact range.
  * A cat that has been calmed by the mod is silent on both sides and is
- * therefore deliberately excluded. A tamed cat that is currently sitting is
- * still eligible, matching the server-side confrontation rule.</p>
+ * therefore deliberately excluded. Tamed cats are also deliberately excluded,
+ * matching the server-side safe-cat rule.</p>
  */
 public final class CatFightClientPose {
     private static final double START_RANGE_SQR = 25.0D;
@@ -60,6 +60,7 @@ public final class CatFightClientPose {
     private static boolean isEligible(Cat cat) {
         return cat.isAlive()
                 && !cat.isSilent()
+                && !cat.isTame()
                 && !cat.isPassenger();
     }
 
