@@ -86,6 +86,12 @@ public final class CatFightCatModel extends CatModel<Cat> {
                           float headPitch) {
         super.setupAnim(cat, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
 
+        // The renderer flattens the ordinary vanilla body for a cat pancake.
+        // Do not draw the raised fighting pieces underneath that effect.
+        if (CatFightClientPose.isPancaked(cat)) {
+            return;
+        }
+
         if (!CatFightClientPose.isFighting(cat)) {
             return;
         }
@@ -133,4 +139,5 @@ public final class CatFightCatModel extends CatModel<Cat> {
         leg.yScale = yScale;
         leg.zScale = 1.0F;
     }
+
 }

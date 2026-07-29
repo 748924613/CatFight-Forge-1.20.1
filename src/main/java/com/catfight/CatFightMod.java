@@ -1,6 +1,7 @@
 package com.catfight;
 
 import com.catfight.entity.CatFightTracker;
+import com.catfight.entity.CatPancakeTracker;
 import com.catfight.item.ModItems;
 import com.catfight.network.CatFightNetwork;
 import com.catfight.sound.ModSounds;
@@ -9,12 +10,18 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.PlayLevelSoundEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -42,6 +49,7 @@ public class CatFightMod {
     public void onLevelTick(TickEvent.LevelTickEvent event) {
         if (event.phase == TickEvent.Phase.END && event.level instanceof ServerLevel serverLevel) {
             CatFightTracker.tick(serverLevel);
+            CatPancakeTracker.finishLevelTick(serverLevel);
         }
     }
 
@@ -49,6 +57,36 @@ public class CatFightMod {
     public void onLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel) {
             CatFightTracker.clearData();
+        }
+    }
+
+    @SubscribeEvent
+    public void onCatTick(LivingEvent.LivingTickEvent event) {
+        if (!event.getEntity().level().isClientSide() && event.getEntity() instanceof Cat cat) {
+            CatPancakeTracker.tick(cat);
+        }
+    }
+
+    @SubscribeEvent
+    public void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof Cat cat) {
+            CatPancakeTracker.syncToPlayer(player, cat);
+        }
+    }
+
+    @SubscribeEvent
+    public void onEmptyBottleUse(PlayerInteractEvent.EntityInteract event) {
+        if (tryRescuePancake(event, event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+        }
+    }
+
+    @SubscribeEvent
+    public void onEmptyBottleUseSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (tryRescuePancake(event, event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
         }
     }
 
@@ -81,6 +119,7 @@ public class CatFightMod {
     public void onCatLeaveLevel(EntityLeaveLevelEvent event) {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof Cat cat) {
             CatFightTracker.removeFromFight(cat);
+            CatPancakeTracker.forgetRuntime(cat);
         }
     }
 
@@ -92,5 +131,12 @@ public class CatFightMod {
         return soundId != null
                 && "minecraft".equals(soundId.getNamespace())
                 && soundId.getPath().startsWith("entity.cat.");
+    }
+
+    private static boolean tryRescuePancake(PlayerInteractEvent event, net.minecraft.world.entity.Entity target) {
+        return !event.getLevel().isClientSide()
+                && event.getItemStack().is(Items.GLASS_BOTTLE)
+                && target instanceof Cat cat
+                && CatPancakeTracker.rescue(cat);
     }
 }

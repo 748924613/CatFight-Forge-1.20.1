@@ -27,21 +27,33 @@ public final class CatFightTracker {
     private static final int ATTACK_INTERVAL = 60;
     private static final int ATTACK_COOLDOWN = 40;
     private static final double ATTACK_CHANCE = 0.22D;
+    private static final float HEAL_TRIGGER_HEALTH = 2.0F;
+    private static final float HEAL_AMOUNT = 1.0F;
+    private static final int HEAL_INTERVAL = 20;
 
     private CatFightTracker() {
+    }
+
+    /** Shared state for both sides of one confrontation. */
+    private static final class PairState {
+        private boolean healing;
+        private long nextHealGameTime;
     }
 
     private static final class FightData {
         private final Cat fighter;
         private final Cat target;
+        private final PairState pair;
         private final boolean restoreAiAfterFight;
         private int attackCooldown;
         private int soundCooldown;
         private int lastSoundIndex = -1;
+        private boolean restoreSilentAfterHealing;
 
-        private FightData(Cat fighter, Cat target) {
+        private FightData(Cat fighter, Cat target, PairState pair) {
             this.fighter = fighter;
             this.target = target;
+            this.pair = pair;
             this.restoreAiAfterFight = !fighter.isNoAi();
             if (this.restoreAiAfterFight) {
                 fighter.setNoAi(true);
@@ -50,7 +62,35 @@ public final class CatFightTracker {
             fighter.setDeltaMovement(Vec3.ZERO);
         }
 
+        private void startHealing() {
+            this.restoreSilentAfterHealing = !this.fighter.isSilent();
+            this.soundCooldown = 0;
+            CatFightNetwork.stopSoundForTracking(this.fighter);
+            if (this.restoreSilentAfterHealing) {
+                this.fighter.setSilent(true);
+            }
+        }
+
+        private void healStep() {
+            if (this.fighter.getHealth() < this.fighter.getMaxHealth()) {
+                this.fighter.heal(HEAL_AMOUNT);
+            }
+        }
+
+        private boolean isFullyHealed() {
+            return this.fighter.getHealth() >= this.fighter.getMaxHealth();
+        }
+
+        private void finishHealing() {
+            if (this.restoreSilentAfterHealing && this.fighter.isAlive()) {
+                this.fighter.setSilent(false);
+            }
+            this.restoreSilentAfterHealing = false;
+            this.soundCooldown = 0;
+        }
+
         private void release() {
+            this.finishHealing();
             CatFightNetwork.stopSoundForTracking(this.fighter);
             if (this.restoreAiAfterFight && this.fighter.isAlive()) {
                 this.fighter.setNoAi(false);
@@ -59,15 +99,18 @@ public final class CatFightTracker {
     }
 
     public static void tick(ServerLevel level) {
-        Set<UUID> seenCats = new HashSet<>();
         List<Cat> cats = new ArrayList<>();
-        level.players().forEach(player -> cats.addAll(level.getEntitiesOfClass(Cat.class,
-                new AABB(player.blockPosition()).inflate(40.0D), cat -> true)));
+        Set<UUID> seenCats = new HashSet<>();
+        level.players().forEach(player -> level.getEntitiesOfClass(Cat.class,
+                        new AABB(player.blockPosition()).inflate(40.0D), cat -> true)
+                .forEach(cat -> {
+                    if (seenCats.add(cat.getUUID())) {
+                        cats.add(cat);
+                    }
+                }));
 
         for (Cat cat : cats) {
-            if (seenCats.add(cat.getUUID())) {
-                tickForbidden(cat);
-            }
+            tickForbidden(cat);
         }
 
         long gameTime = level.getGameTime();
@@ -88,10 +131,40 @@ public final class CatFightTracker {
                 removeFromFight(cat);
                 continue;
             }
+            FightData targetData = FIGHTS.get(target.getUUID());
+            if (targetData == null || targetData.target != cat || targetData.pair != data.pair) {
+                removeFromFight(cat);
+                continue;
+            }
 
             cat.getNavigation().stop();
             cat.setDeltaMovement(Vec3.ZERO);
             cat.lookAt(EntityAnchorArgument.Anchor.FEET, target.position());
+
+            PairState pair = data.pair;
+            if (!pair.healing
+                    && (cat.getHealth() <= HEAL_TRIGGER_HEALTH || target.getHealth() <= HEAL_TRIGGER_HEALTH)) {
+                pair.healing = true;
+                pair.nextHealGameTime = gameTime;
+                data.startHealing();
+                targetData.startHealing();
+            }
+            if (pair.healing) {
+                if (cat.getUUID().compareTo(target.getUUID()) < 0) {
+                    if (gameTime >= pair.nextHealGameTime) {
+                        data.healStep();
+                        targetData.healStep();
+                        pair.nextHealGameTime = gameTime + HEAL_INTERVAL;
+                    }
+                    if (data.isFullyHealed() && targetData.isFullyHealed()) {
+                        pair.healing = false;
+                        data.finishHealing();
+                        targetData.finishHealing();
+                    }
+                }
+                continue;
+            }
+
             if (data.soundCooldown > 0) {
                 data.soundCooldown--;
             }
@@ -140,8 +213,9 @@ public final class CatFightTracker {
                         && cat.distanceToSqr(other) <= FIGHT_RANGE * FIGHT_RANGE);
         if (!nearby.isEmpty()) {
             Cat opponent = nearby.get(0);
-            FIGHTS.put(cat.getUUID(), new FightData(cat, opponent));
-            FIGHTS.put(opponent.getUUID(), new FightData(opponent, cat));
+            PairState pair = new PairState();
+            FIGHTS.put(cat.getUUID(), new FightData(cat, opponent, pair));
+            FIGHTS.put(opponent.getUUID(), new FightData(opponent, cat, pair));
         }
     }
 
@@ -189,6 +263,9 @@ public final class CatFightTracker {
         return cat.isAlive()
                 && !cat.isRemoved()
                 && !cat.isTame()
+                && !cat.isPassenger()
+                && !CatPancakeTracker.isPancaked(cat)
+                && !CatPancakeTracker.isChasingVehicle(cat)
                 && !FORBIDDEN.containsKey(cat.getUUID());
     }
 
