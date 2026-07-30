@@ -60,37 +60,30 @@ public final class CatFightCatModel extends CatModel<Cat> {
         root.addOrReplaceChild("catfight_arch_spine",
                 CubeListBuilder.create().texOffs(20, 0).addBox(-2.0F, -1.5F, -2.5F, 4.0F, 3.0F, 5.0F),
                 PartPose.ZERO);
-        // The cat pancake is intentionally a separate, thin top-down silhouette.  Keeping
-        // these parts at the root means they can replace every vanilla body part cleanly,
-        // instead of simply squashing a standing cat and leaving awkward overlaps behind.
-        // All vanilla cat variants have an opaque 20x10 body-texture panel at [20, 40) x
-        // [12, 22).  Every pancake cube stays inside that panel.  Wider shapes are split
-        // into short cubes so none of their faces sample the transparent texture padding.
+        // The cat pancake is intentionally a separate, one-pixel-thin top-down silhouette.
+        // Its renderer selects a dedicated, opaque 64x32 texture atlas while pancaked, so
+        // these intentionally broad cuboids never repeat vanilla paws or transparent padding.
         root.addOrReplaceChild("catfight_pancake_head",
-                CubeListBuilder.create()
-                        .texOffs(20, 12).addBox(-3.0F, 0.0F, -3.0F, 3.0F, 2.0F, 6.0F)
-                        .texOffs(20, 12).addBox(0.0F, 0.0F, -3.0F, 3.0F, 2.0F, 6.0F),
-                PartPose.offset(0.0F, 22.0F, -8.0F));
+                CubeListBuilder.create().texOffs(0, 0).addBox(-3.0F, 0.0F, -3.0F, 6.0F, 1.0F, 6.0F),
+                PartPose.offset(0.0F, 22.94F, -8.0F));
         root.addOrReplaceChild("catfight_pancake_body",
-                CubeListBuilder.create()
-                        .texOffs(20, 12).addBox(-2.0F, 0.0F, -5.0F, 4.0F, 2.0F, 5.0F)
-                        .texOffs(20, 12).addBox(-2.0F, 0.0F, 0.0F, 4.0F, 2.0F, 5.0F),
-                PartPose.offset(0.0F, 22.0F, 0.0F));
+                CubeListBuilder.create().texOffs(25, 0).addBox(-2.0F, 0.0F, -5.0F, 4.0F, 1.0F, 10.0F),
+                PartPose.offset(0.0F, 22.94F, 0.0F));
         root.addOrReplaceChild("catfight_pancake_left_front_leg",
-                CubeListBuilder.create().texOffs(20, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
-                PartPose.offset(2.0F, 22.0F, -3.0F));
+                CubeListBuilder.create().texOffs(0, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 1.0F, 2.0F),
+                PartPose.offset(2.0F, 22.94F, -3.0F));
         root.addOrReplaceChild("catfight_pancake_right_front_leg",
-                CubeListBuilder.create().texOffs(20, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
-                PartPose.offset(-2.0F, 22.0F, -3.0F));
+                CubeListBuilder.create().texOffs(15, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 1.0F, 2.0F),
+                PartPose.offset(-2.0F, 22.94F, -3.0F));
         root.addOrReplaceChild("catfight_pancake_left_hind_leg",
-                CubeListBuilder.create().texOffs(20, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
-                PartPose.offset(2.0F, 22.0F, 3.0F));
+                CubeListBuilder.create().texOffs(30, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 1.0F, 2.0F),
+                PartPose.offset(2.0F, 22.94F, 3.0F));
         root.addOrReplaceChild("catfight_pancake_right_hind_leg",
-                CubeListBuilder.create().texOffs(20, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
-                PartPose.offset(-2.0F, 22.0F, 3.0F));
+                CubeListBuilder.create().texOffs(45, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 1.0F, 2.0F),
+                PartPose.offset(-2.0F, 22.94F, 3.0F));
         root.addOrReplaceChild("catfight_pancake_tail",
-                CubeListBuilder.create().texOffs(20, 12).addBox(-0.75F, 0.0F, 0.0F, 1.5F, 2.0F, 6.0F),
-                PartPose.offset(0.0F, 22.0F, 5.0F));
+                CubeListBuilder.create().texOffs(0, 16).addBox(-0.75F, 0.0F, 0.0F, 1.5F, 1.0F, 6.0F),
+                PartPose.offset(0.0F, 22.94F, 5.0F));
         return LayerDefinition.create(mesh, 64, 32);
     }
 
