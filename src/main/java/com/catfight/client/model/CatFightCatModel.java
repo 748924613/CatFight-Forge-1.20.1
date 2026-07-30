@@ -20,12 +20,26 @@ public final class CatFightCatModel extends CatModel<Cat> {
     private final ModelPart archFront;
     private final ModelPart archRear;
     private final ModelPart archSpine;
+    private final ModelPart pancakeHead;
+    private final ModelPart pancakeBody;
+    private final ModelPart pancakeLeftFrontLeg;
+    private final ModelPart pancakeRightFrontLeg;
+    private final ModelPart pancakeLeftHindLeg;
+    private final ModelPart pancakeRightHindLeg;
+    private final ModelPart pancakeTail;
 
     public CatFightCatModel(ModelPart root) {
         super(root);
         this.archFront = root.getChild("catfight_arch_front");
         this.archRear = root.getChild("catfight_arch_rear");
         this.archSpine = root.getChild("catfight_arch_spine");
+        this.pancakeHead = root.getChild("catfight_pancake_head");
+        this.pancakeBody = root.getChild("catfight_pancake_body");
+        this.pancakeLeftFrontLeg = root.getChild("catfight_pancake_left_front_leg");
+        this.pancakeRightFrontLeg = root.getChild("catfight_pancake_right_front_leg");
+        this.pancakeLeftHindLeg = root.getChild("catfight_pancake_left_hind_leg");
+        this.pancakeRightHindLeg = root.getChild("catfight_pancake_right_hind_leg");
+        this.pancakeTail = root.getChild("catfight_pancake_tail");
     }
 
     /**
@@ -46,13 +60,44 @@ public final class CatFightCatModel extends CatModel<Cat> {
         root.addOrReplaceChild("catfight_arch_spine",
                 CubeListBuilder.create().texOffs(20, 0).addBox(-2.0F, -1.5F, -2.5F, 4.0F, 3.0F, 5.0F),
                 PartPose.ZERO);
+        // The cat pancake is intentionally a separate, thin top-down silhouette.  Keeping
+        // these parts at the root means they can replace every vanilla body part cleanly,
+        // instead of simply squashing a standing cat and leaving awkward overlaps behind.
+        root.addOrReplaceChild("catfight_pancake_head",
+                CubeListBuilder.create().texOffs(0, 0).addBox(-3.0F, 0.0F, -3.0F, 6.0F, 2.0F, 6.0F),
+                PartPose.offset(0.0F, 22.0F, -8.0F));
+        root.addOrReplaceChild("catfight_pancake_body",
+                CubeListBuilder.create().texOffs(20, 0).addBox(-2.0F, 0.0F, -5.0F, 4.0F, 2.0F, 10.0F),
+                PartPose.offset(0.0F, 22.0F, 0.0F));
+        root.addOrReplaceChild("catfight_pancake_left_front_leg",
+                CubeListBuilder.create().texOffs(0, 13).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                PartPose.offset(2.0F, 22.0F, -3.0F));
+        root.addOrReplaceChild("catfight_pancake_right_front_leg",
+                CubeListBuilder.create().texOffs(0, 13).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                PartPose.offset(-2.0F, 22.0F, -3.0F));
+        root.addOrReplaceChild("catfight_pancake_left_hind_leg",
+                CubeListBuilder.create().texOffs(0, 13).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                PartPose.offset(2.0F, 22.0F, 3.0F));
+        root.addOrReplaceChild("catfight_pancake_right_hind_leg",
+                CubeListBuilder.create().texOffs(0, 13).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                PartPose.offset(-2.0F, 22.0F, 3.0F));
+        root.addOrReplaceChild("catfight_pancake_tail",
+                CubeListBuilder.create().texOffs(0, 20).addBox(-0.75F, 0.0F, 0.0F, 1.5F, 2.0F, 6.0F),
+                PartPose.offset(0.0F, 22.0F, 5.0F));
         return LayerDefinition.create(mesh, 64, 32);
+    }
+
+    @Override
+    protected Iterable<ModelPart> headParts() {
+        return List.of(this.head, this.pancakeHead);
     }
 
     @Override
     protected Iterable<ModelPart> bodyParts() {
         return List.of(this.body, this.leftHindLeg, this.rightHindLeg, this.leftFrontLeg, this.rightFrontLeg,
-                this.tail1, this.tail2, this.archFront, this.archRear, this.archSpine);
+                this.tail1, this.tail2, this.archFront, this.archRear, this.archSpine,
+                this.pancakeBody, this.pancakeLeftFrontLeg, this.pancakeRightFrontLeg,
+                this.pancakeLeftHindLeg, this.pancakeRightHindLeg, this.pancakeTail);
     }
 
     @Override
@@ -70,14 +115,31 @@ public final class CatFightCatModel extends CatModel<Cat> {
         this.archFront.resetPose();
         this.archRear.resetPose();
         this.archSpine.resetPose();
+        this.pancakeHead.resetPose();
+        this.pancakeBody.resetPose();
+        this.pancakeLeftFrontLeg.resetPose();
+        this.pancakeRightFrontLeg.resetPose();
+        this.pancakeLeftHindLeg.resetPose();
+        this.pancakeRightHindLeg.resetPose();
+        this.pancakeTail.resetPose();
+        this.head.visible = true;
         this.body.visible = true;
         this.leftFrontLeg.visible = true;
         this.rightFrontLeg.visible = true;
         this.leftHindLeg.visible = true;
         this.rightHindLeg.visible = true;
+        this.tail1.visible = true;
+        this.tail2.visible = true;
         this.archFront.visible = false;
         this.archRear.visible = false;
         this.archSpine.visible = false;
+        this.pancakeHead.visible = false;
+        this.pancakeBody.visible = false;
+        this.pancakeLeftFrontLeg.visible = false;
+        this.pancakeRightFrontLeg.visible = false;
+        this.pancakeLeftHindLeg.visible = false;
+        this.pancakeRightHindLeg.visible = false;
+        this.pancakeTail.visible = false;
         super.prepareMobModel(cat, limbSwing, limbSwingAmount, partialTick);
     }
 
@@ -86,9 +148,27 @@ public final class CatFightCatModel extends CatModel<Cat> {
                           float headPitch) {
         super.setupAnim(cat, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
 
-        // The renderer flattens the ordinary vanilla body for a cat pancake.
-        // Do not draw the raised fighting pieces underneath that effect.
+        // Replace every ordinary part with the deliberate top-down cat-pancake shape.
+        // This is a fixed pose: a flattened cat cannot turn, walk or arch its back.
         if (CatFightClientPose.isPancaked(cat)) {
+            this.head.visible = false;
+            this.body.visible = false;
+            this.leftFrontLeg.visible = false;
+            this.rightFrontLeg.visible = false;
+            this.leftHindLeg.visible = false;
+            this.rightHindLeg.visible = false;
+            this.tail1.visible = false;
+            this.tail2.visible = false;
+            this.archFront.visible = false;
+            this.archRear.visible = false;
+            this.archSpine.visible = false;
+            this.pancakeHead.visible = true;
+            this.pancakeBody.visible = true;
+            this.pancakeLeftFrontLeg.visible = true;
+            this.pancakeRightFrontLeg.visible = true;
+            this.pancakeLeftHindLeg.visible = true;
+            this.pancakeRightHindLeg.visible = true;
+            this.pancakeTail.visible = true;
             return;
         }
 
