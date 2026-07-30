@@ -63,26 +63,33 @@ public final class CatFightCatModel extends CatModel<Cat> {
         // The cat pancake is intentionally a separate, thin top-down silhouette.  Keeping
         // these parts at the root means they can replace every vanilla body part cleanly,
         // instead of simply squashing a standing cat and leaving awkward overlaps behind.
+        // All vanilla cat variants have an opaque 20x10 body-texture panel at [20, 40) x
+        // [12, 22).  Every pancake cube stays inside that panel.  Wider shapes are split
+        // into short cubes so none of their faces sample the transparent texture padding.
         root.addOrReplaceChild("catfight_pancake_head",
-                CubeListBuilder.create().texOffs(0, 0).addBox(-3.0F, 0.0F, -3.0F, 6.0F, 2.0F, 6.0F),
+                CubeListBuilder.create()
+                        .texOffs(20, 12).addBox(-3.0F, 0.0F, -3.0F, 3.0F, 2.0F, 6.0F)
+                        .texOffs(20, 12).addBox(0.0F, 0.0F, -3.0F, 3.0F, 2.0F, 6.0F),
                 PartPose.offset(0.0F, 22.0F, -8.0F));
         root.addOrReplaceChild("catfight_pancake_body",
-                CubeListBuilder.create().texOffs(20, 0).addBox(-2.0F, 0.0F, -5.0F, 4.0F, 2.0F, 10.0F),
+                CubeListBuilder.create()
+                        .texOffs(20, 12).addBox(-2.0F, 0.0F, -5.0F, 4.0F, 2.0F, 5.0F)
+                        .texOffs(20, 12).addBox(-2.0F, 0.0F, 0.0F, 4.0F, 2.0F, 5.0F),
                 PartPose.offset(0.0F, 22.0F, 0.0F));
         root.addOrReplaceChild("catfight_pancake_left_front_leg",
-                CubeListBuilder.create().texOffs(0, 13).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                CubeListBuilder.create().texOffs(20, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
                 PartPose.offset(2.0F, 22.0F, -3.0F));
         root.addOrReplaceChild("catfight_pancake_right_front_leg",
-                CubeListBuilder.create().texOffs(0, 13).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                CubeListBuilder.create().texOffs(20, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
                 PartPose.offset(-2.0F, 22.0F, -3.0F));
         root.addOrReplaceChild("catfight_pancake_left_hind_leg",
-                CubeListBuilder.create().texOffs(0, 13).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                CubeListBuilder.create().texOffs(20, 12).addBox(0.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
                 PartPose.offset(2.0F, 22.0F, 3.0F));
         root.addOrReplaceChild("catfight_pancake_right_hind_leg",
-                CubeListBuilder.create().texOffs(0, 13).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
+                CubeListBuilder.create().texOffs(20, 12).addBox(-5.0F, 0.0F, -1.0F, 5.0F, 2.0F, 2.0F),
                 PartPose.offset(-2.0F, 22.0F, 3.0F));
         root.addOrReplaceChild("catfight_pancake_tail",
-                CubeListBuilder.create().texOffs(0, 20).addBox(-0.75F, 0.0F, 0.0F, 1.5F, 2.0F, 6.0F),
+                CubeListBuilder.create().texOffs(20, 12).addBox(-0.75F, 0.0F, 0.0F, 1.5F, 2.0F, 6.0F),
                 PartPose.offset(0.0F, 22.0F, 5.0F));
         return LayerDefinition.create(mesh, 64, 32);
     }
@@ -177,7 +184,6 @@ public final class CatFightCatModel extends CatModel<Cat> {
         }
 
         float lean = CatFightClientPose.leanDirection(cat);
-        float twitch = Mth.sin((cat.tickCount + ageInTicks) * 0.35F) * 0.015F;
 
         // Only the upper exaggerated arched pieces are shown during a confrontation.
         this.body.visible = false;
@@ -201,11 +207,17 @@ public final class CatFightCatModel extends CatModel<Cat> {
         placeFightLeg(this.leftHindLeg, 1.1F, 13.77F, 5.0F, 1.71F);
         placeFightLeg(this.rightHindLeg, -1.1F, 13.77F, 5.0F, 1.71F);
 
-        // A lowered head and raised tail complete the defensive arched-back silhouette.
-        this.head.y += 0.65F;
-        this.head.z += 0.2F;
-        this.head.xRot += 0.07F + twitch;
-        this.head.zRot -= lean * 0.10F;
+        // Hold the head high and tilted throughout a confrontation instead of letting
+        // vanilla look/idle animation lower it again.  A small clamped yaw keeps it aimed
+        // toward the opponent while the roll stays visibly tilted and stable for each cat.
+        float fightHeadYaw = Mth.clamp(netHeadYaw * Mth.DEG_TO_RAD, -0.35F, 0.35F);
+        this.head.resetPose();
+        this.head.visible = true;
+        this.head.xScale = 1.0F;
+        this.head.yScale = 1.0F;
+        this.head.zScale = 1.0F;
+        this.head.setPos(0.0F, 10.35F, -8.80F);
+        this.head.setRotation(-0.48F, fightHeadYaw, -lean * 0.30F);
         this.tail1.setPos(0.0F, 11.2F, 6.80F);
         this.tail1.setRotation(1.20F, 0.0F, lean * 0.03F);
         this.tail2.setPos(0.0F, 14.1F, 14.26F);
