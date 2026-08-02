@@ -19,21 +19,3 @@
 1. 安装 Minecraft 1.20.1 与 Forge 47.x。
 2. 将构建产物 `catfight-1.3.20-forge-1.20.1.jar` 放进 `.minecraft/mods`。
 3. 联机时服务端和所有客户端应安装相同版本。
-
-## 从源码构建
-
-需要 Java 17。
-
-```powershell
-.\gradlew.bat build
-```
-
-构建产物位于 `build/libs/`。
-
-## 相关项目
-
-- [ATLCNND/catfight-mod](https://github.com/ATLCNND/catfight-mod)
-- [Rogic460/Minecraft-laowu-meme](https://github.com/Rogic460/Minecraft-laowu-meme)
-
-本仓库为 Forge 1.20.1 整理版本；请在再发布音频、素材或上游代码前确认其对应授权。
-模组图标来自 `Rogic460/Minecraft-laowu-meme`，其 MIT 许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
